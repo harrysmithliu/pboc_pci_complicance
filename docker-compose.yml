@@ -1,0 +1,40 @@
+services:
+  app:
+    build: .
+    environment:
+      APP_NAME: Payment Compliance MVP
+      APP_ENV: local
+      DEBUG: "true"
+      DATABASE_URL: postgresql+psycopg://payment_app:payment_pass@postgres:5432/payment_compliance
+      JWT_SECRET_KEY: change-me-local-jwt-secret
+      JWT_EXPIRES_MINUTES: "60"
+      SEED_ADMIN_USERNAME: admin
+      SEED_ADMIN_PASSWORD: admin123
+      SEED_OPERATOR_USERNAME: operator
+      SEED_OPERATOR_PASSWORD: operator123
+      SEED_AUDITOR_USERNAME: auditor
+      SEED_AUDITOR_PASSWORD: auditor123
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: payment_compliance
+      POSTGRES_USER: payment_app
+      POSTGRES_PASSWORD: payment_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payment_app -d payment_compliance"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:
