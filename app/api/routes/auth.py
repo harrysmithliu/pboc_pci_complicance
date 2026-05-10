@@ -8,6 +8,7 @@ from app.core.security import create_access_token, verify_password
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.auth import LoginRequest, TokenResponse, UserResponse
+from app.services.audit import write_audit_log
 
 router = APIRouter()
 
@@ -20,6 +21,19 @@ def login(payload: LoginRequest, db: Annotated[Session, Depends(get_db)]) -> Tok
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
         )
+
+    write_audit_log(
+        db,
+        actor=user.username,
+        actor_role=user.role,
+        action="LOGIN",
+        resource_type="user",
+        resource_id=str(user.id),
+        result="SUCCESS",
+        trace_id=f"login-{user.username}",
+        metadata={"username": user.username},
+    )
+    db.commit()
 
     return TokenResponse(
         access_token=create_access_token(subject=user.username, role=user.role),
@@ -35,4 +49,3 @@ def read_current_user(current_user: Annotated[User, Depends(get_current_user)]) 
         role=current_user.role,
         is_active=current_user.is_active,
     )
-

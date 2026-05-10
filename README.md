@@ -55,12 +55,34 @@ Brief reviewer flow:
 2. Call `POST /auth/login` with `operator` / `operator123`.
 3. Click `Authorize` and paste the returned bearer token.
 4. Call `POST /payments` with a payment payload that includes `request_no`, `merchant_id`, `account_reference`, `amount`, `currency`, `payer_name`, `card_number`, and `channel`.
-5. Confirm the response returns `state=PENDING_RISK` and masked fields such as `payment_identifier_masked=************7890`.
+5. Confirm the response returns a risk-derived `state` such as `APPROVED` and masked fields such as `payment_identifier_masked=************7890`.
 6. Call `POST /payments` again with the same `request_no`.
 7. Confirm the second response returns the same payment `id` and `idempotent_replay=true`.
 8. Call `GET /payments/{id}` and confirm no raw card number or raw account reference is exposed.
 9. Log in as `auditor` / `auditor123`.
 10. Confirm `GET /payments/{id}` succeeds, but `POST /payments` returns `403`.
+
+## Batch 3 Acceptance
+
+- Creating a payment automatically generates a risk decision.
+- At least three rules are available: high amount review, blacklisted account rejection, and unsupported merchant/channel rejection.
+- `GET /payments/{id}/risk` returns the persisted risk result.
+- Login, payment creation, and risk decision create audit records.
+- `GET /audit-logs` is available to `admin` and `auditor`, but not `operator`.
+- Audit metadata uses masked sensitive values only.
+
+Brief reviewer flow:
+
+1. Open `http://localhost:8000/docs`.
+2. Log in as `operator` / `operator123` and authorize.
+3. Call `POST /payments` with a normal amount and confirm the response state is `APPROVED`.
+4. Call `GET /payments/{id}/risk` and confirm `decision=APPROVE`.
+5. Create another payment with `amount=15000.00`.
+6. Call `GET /payments/{id}/risk` and confirm `decision=REVIEW` with `AMOUNT_ABOVE_THRESHOLD`.
+7. Create another payment with `account_reference=ACC-BLACKLISTED-001`.
+8. Call `GET /payments/{id}/risk` and confirm `decision=REJECT` with `BLACKLISTED_ACCOUNT`.
+9. Log in as `admin` / `admin123`.
+10. Call `GET /audit-logs` and confirm `LOGIN`, `PAYMENT_CREATE`, and `RISK_DECISION` records exist without raw card numbers or raw account references.
 
 ## Tests
 

@@ -48,7 +48,7 @@ def test_operator_can_create_payment_with_masking_and_idempotency() -> None:
         first_body = first_response.json()
 
         assert first_body["request_no"] == request_no
-        assert first_body["state"] == "PENDING_RISK"
+        assert first_body["state"] == "APPROVED"
         assert first_body["currency"] == "USD"
         assert first_body["channel"] == "WEB"
         assert first_body["payment_identifier_masked"] == "************7890"
@@ -118,4 +118,3 @@ def test_payment_requires_authentication() -> None:
         response = client.post("/payments", json=_payment_payload(f"REQ-{uuid4()}"))
 
     assert response.status_code == 401
-
