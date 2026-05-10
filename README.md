@@ -1,6 +1,6 @@
 # Secure Payment Integration & Audit Demo
 
-This repository contains a local MVP for a payment-security engineering demo. Batch 1 provides the runnable backend skeleton, PostgreSQL integration, JWT login, seeded roles, RBAC dependencies, and Swagger.
+This repository contains a local MVP for a payment-security engineering demo. The current build provides the runnable backend skeleton, PostgreSQL integration, JWT login, seeded roles, RBAC dependencies, Swagger, payment creation, request-number idempotency, and sensitive payment identifier masking.
 
 This demo is not certified compliant. It demonstrates engineering controls commonly expected in PBOC-style or PCI-oriented payment systems.
 
@@ -40,6 +40,20 @@ http://localhost:8000/health
 - `POST /auth/login` returns a bearer token for each seeded user.
 - `GET /auth/me` returns the authenticated user's username and role.
 - Swagger is available at `/docs`.
+
+## Batch 2 Acceptance
+
+- `operator` and `admin` can create payment transactions with `POST /payments`.
+- `auditor` can query transactions but cannot create them.
+- Reusing the same `request_no` returns the existing transaction with `idempotent_replay=true`.
+- API responses expose masked payment identifiers only.
+- The main transaction record stores masked identifiers, not raw card numbers or account references.
+
+## Tests
+
+```bash
+python3 -m pytest -q
+```
 
 ## License
 

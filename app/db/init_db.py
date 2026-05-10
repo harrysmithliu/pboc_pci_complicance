@@ -4,7 +4,7 @@ from app.core.config import settings
 from app.core.security import hash_password
 from app.db.base import Base
 from app.db.session import engine
-from app.models.user import User
+from app.models import User
 
 
 def _seed_user(db: Session, username: str, password: str, role: str) -> None:
@@ -28,4 +28,3 @@ def init_db(db: Session) -> None:
     _seed_user(db, settings.seed_operator_username, settings.seed_operator_password, "operator")
     _seed_user(db, settings.seed_auditor_username, settings.seed_auditor_password, "auditor")
     db.commit()
-
