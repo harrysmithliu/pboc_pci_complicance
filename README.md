@@ -49,6 +49,19 @@ http://localhost:8000/health
 - API responses expose masked payment identifiers only.
 - The main transaction record stores masked identifiers, not raw card numbers or account references.
 
+Brief reviewer flow:
+
+1. Open `http://localhost:8000/docs`.
+2. Call `POST /auth/login` with `operator` / `operator123`.
+3. Click `Authorize` and paste the returned bearer token.
+4. Call `POST /payments` with a payment payload that includes `request_no`, `merchant_id`, `account_reference`, `amount`, `currency`, `payer_name`, `card_number`, and `channel`.
+5. Confirm the response returns `state=PENDING_RISK` and masked fields such as `payment_identifier_masked=************7890`.
+6. Call `POST /payments` again with the same `request_no`.
+7. Confirm the second response returns the same payment `id` and `idempotent_replay=true`.
+8. Call `GET /payments/{id}` and confirm no raw card number or raw account reference is exposed.
+9. Log in as `auditor` / `auditor123`.
+10. Confirm `GET /payments/{id}` succeeds, but `POST /payments` returns `403`.
+
 ## Tests
 
 ```bash
