@@ -84,6 +84,30 @@ Brief reviewer flow:
 9. Log in as `admin` / `admin123`.
 10. Call `GET /audit-logs` and confirm `LOGIN`, `PAYMENT_CREATE`, and `RISK_DECISION` records exist without raw card numbers or raw account references.
 
+## Batch 4 Acceptance
+
+- `POST /webhooks/provider/payment-status` validates HMAC signatures.
+- Webhook requests require `X-Provider-Timestamp`, `X-Provider-Nonce`, and `X-Provider-Signature`.
+- Expired timestamps, invalid signatures, and reused nonces are rejected.
+- Valid webhooks can update payment state.
+- `POST /payments/{id}/settle` settles only `APPROVED` transactions.
+- `POST /payments/{id}/reverse` reverses only `SETTLED` transactions.
+- Webhook handling, settlement, and reversal write audit records.
+- `/dev/webhook-signature` is available for local Swagger-based webhook testing.
+
+Brief reviewer flow:
+
+1. Open `http://localhost:8000/docs`.
+2. Log in as `operator` / `operator123` and authorize.
+3. Create a normal payment with `POST /payments` and confirm `state=APPROVED`.
+4. Call `POST /dev/webhook-signature` with payload `{"transaction_id": <id>, "event_type": "payment.status", "status": "SETTLED", "provider_reference": "provider-demo-001"}`.
+5. Copy the returned `timestamp`, `nonce`, and `signature`.
+6. Call `POST /webhooks/provider/payment-status` with the same payload and the three copied values as headers.
+7. Confirm the webhook response returns `transaction_state=SETTLED`.
+8. Call the same webhook again with the same nonce and confirm it is rejected as replay.
+9. Create another payment and call the webhook with a modified signature to confirm invalid signatures are rejected.
+10. Log in as `admin` / `admin123`, call `GET /audit-logs`, and confirm webhook accepted/rejected records exist.
+
 ## Tests
 
 ```bash

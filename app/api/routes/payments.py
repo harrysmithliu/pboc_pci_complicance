@@ -8,13 +8,14 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_roles
 from app.core.masking import mask_identifier
 from app.db.session import get_db
+from app.models.risk_result import RiskResult
 from app.models.transaction import Transaction
 from app.models.user import User
 from app.schemas.payment import PaymentCreateRequest, PaymentResponse
 from app.schemas.risk import RiskResultResponse
 from app.services.audit import write_audit_log
 from app.services.risk import evaluate_and_store_risk
-from app.models.risk_result import RiskResult
+from app.services.state import reverse_transaction, settle_transaction
 
 router = APIRouter()
 
@@ -136,3 +137,57 @@ def get_payment_risk(
     if risk_result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Risk result not found")
     return RiskResultResponse.model_validate(risk_result)
+
+
+@router.post("/{payment_id}/settle", response_model=PaymentResponse)
+def settle_payment(
+    payment_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(require_roles("admin", "operator"))],
+) -> PaymentResponse:
+    transaction = db.get(Transaction, payment_id)
+    if transaction is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+
+    settle_transaction(transaction)
+    write_audit_log(
+        db,
+        actor=current_user.username,
+        actor_role=current_user.role,
+        action="SETTLEMENT_REQUEST",
+        resource_type="transaction",
+        resource_id=str(transaction.id),
+        result="SUCCESS",
+        trace_id=transaction.trace_id,
+        metadata={"request_no": transaction.request_no, "state": transaction.state},
+    )
+    db.commit()
+    db.refresh(transaction)
+    return _to_payment_response(transaction)
+
+
+@router.post("/{payment_id}/reverse", response_model=PaymentResponse)
+def reverse_payment(
+    payment_id: int,
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(require_roles("admin", "operator"))],
+) -> PaymentResponse:
+    transaction = db.get(Transaction, payment_id)
+    if transaction is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+
+    reverse_transaction(transaction)
+    write_audit_log(
+        db,
+        actor=current_user.username,
+        actor_role=current_user.role,
+        action="REVERSAL_REQUEST",
+        resource_type="transaction",
+        resource_id=str(transaction.id),
+        result="SUCCESS",
+        trace_id=transaction.trace_id,
+        metadata={"request_no": transaction.request_no, "state": transaction.state},
+    )
+    db.commit()
+    db.refresh(transaction)
+    return _to_payment_response(transaction)

@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "change-me-local-jwt-secret"
     jwt_expires_minutes: int = 60
 
+    webhook_hmac_secret: str = "change-me-local-webhook-secret"
+    webhook_timestamp_tolerance_seconds: int = 300
+
     seed_admin_username: str = "admin"
     seed_admin_password: str = "admin123"
     seed_operator_username: str = "operator"
@@ -29,4 +32,3 @@ def get_settings() -> Settings:
 
 
 settings = get_settings()
-

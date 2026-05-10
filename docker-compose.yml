@@ -8,6 +8,8 @@ services:
       DATABASE_URL: postgresql+psycopg://payment_app:payment_pass@postgres:5432/payment_compliance
       JWT_SECRET_KEY: change-me-local-jwt-secret
       JWT_EXPIRES_MINUTES: "60"
+      WEBHOOK_HMAC_SECRET: change-me-local-webhook-secret
+      WEBHOOK_TIMESTAMP_TOLERANCE_SECONDS: "300"
       SEED_ADMIN_USERNAME: admin
       SEED_ADMIN_PASSWORD: admin123
       SEED_OPERATOR_USERNAME: operator
