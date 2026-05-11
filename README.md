@@ -33,6 +33,26 @@ http://localhost:8000/health
 | `operator` | `operator123` | `operator` |
 | `auditor` | `auditor123` | `auditor` |
 
+## Control Coverage
+
+| Control Area | Current Project Status |
+|---|---|
+| Authentication | JWT login implemented |
+| RBAC access control | `admin` / `operator` / `auditor` implemented |
+| Payment creation | Implemented |
+| `request_no` idempotency | Implemented |
+| Sensitive data masking | API responses, transaction records, and audit metadata use masked values |
+| Raw card number storage avoidance | Main transaction records store only masked payment identifiers |
+| Risk-control rules | High amount, blacklisted account, and unsupported merchant/channel checks |
+| Transaction state transitions | `APPROVED` / `PENDING_RISK` / `REJECTED` / `SETTLED` / `FAILED` / `REVERSED` |
+| Audit logging | Login, payment creation, risk decision, webhook, settle, and reverse operations |
+| Webhook HMAC verification | Implemented |
+| Webhook timestamp validation | Implemented |
+| Nonce replay protection | Implemented |
+| Local runtime | Docker Compose |
+| Swagger acceptance | Implemented |
+| Automated tests | 12 tests passing |
+
 ## Batch 1 Acceptance
 
 - `docker compose up --build` starts the app and PostgreSQL.
@@ -113,6 +133,18 @@ Brief reviewer flow:
 ```bash
 python3 -m pytest -q
 ```
+
+## Future Hardening Recommendations
+
+- Password policy and failed-login lockout.
+- Access logging and request `trace_id` middleware.
+- Configuration and secrets management guidance.
+- Database migrations with Alembic.
+- Stronger card-number tokenization model.
+- TLS / HTTPS deployment guidance.
+- Log retention policy.
+- Data minimization guidance.
+- Security testing guidance.
 
 ## License
 
